@@ -1,0 +1,60 @@
+# AWS Credentials ko configure karen - do methods hain:
+# Method 1: AWS CLI use karke
+# aws configure command run karen terminal me
+
+# Method 2: Ya direct code me credentials add karen
+import boto3
+client = boto3.client('textract',
+    aws_access_key_id='Aaaaaaaaaaaaaaaa',
+    aws_secret_access_key='9ssssssssssssssssssssss',
+    region_name='ap-south-1'  # Ya koi aur region
+)
+
+
+import os
+import boto3
+from textractprettyprinter.t_pretty_print_expense import get_string
+from textractprettyprinter.t_pretty_print_expense import Textract_Expense_Pretty_Print, Pretty_Print_Table_Format
+from trp.trp2_expense import TAnalyzeExpenseDocument, TAnalyzeExpenseDocumentSchema
+from PIL import Image  # Pillow library for displaying the image
+from IPython.display import display, Image as IPImage, HTML  # For displaying in Jupyter
+
+# Initialize the Textract client
+textract = boto3.client(
+    service_name='textract',
+    region_name='ap-south-1',
+    endpoint_url='https://textract.ap-south-1.amazonaws.com'
+)
+
+# Load the document (local file example)
+image_path = "1.jpg"  # Replace with your image path
+
+# Ensure the file exists
+if os.path.exists(image_path):
+    with open(image_path, 'rb') as file:
+        img_test = file.read()
+        bytes_test = bytearray(img_test)
+        print('Image loaded', image_path)
+
+    # Call Textract AnalyzeExpense API
+    response = textract.analyze_expense(Document={'Bytes': bytes_test})
+
+    # Directly load the response (no need to use json.loads())
+    t_doc = TAnalyzeExpenseDocumentSchema().load(response)
+
+    # Pretty print the response in fancy_grid format with both SUMMARY and LINEITEMGROUPS
+    pretty_printed_string = get_string(
+        textract_json=response, 
+        output_type=[Textract_Expense_Pretty_Print.SUMMARY, Textract_Expense_Pretty_Print.LINEITEMGROUPS], 
+        table_format=Pretty_Print_Table_Format.fancy_grid
+    )
+
+    # Display the image above the table with resized dimensions
+    display(IPImage(image_path, width=300))  # Resize the image width to 500px (height will adjust automatically)
+
+    # Display the formatted Textract response as a table below the image
+    display(HTML(f"<pre>{pretty_printed_string}</pre>"))
+
+else:
+    print("Image file does not exist at the specified path.")
+
